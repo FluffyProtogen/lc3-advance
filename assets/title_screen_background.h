@@ -1,0 +1,19 @@
+#pragma once
+
+extern const unsigned short title_screen_background_palette[16];
+#define TITLE_SCREEN_BACKGROUND_PALETTE_SIZE 32
+#define TITLE_SCREEN_BACKGROUND_PALETTE_LENGTH 16
+
+#define TITLE_SCREEN_BACKGROUND_PALETTE_TYPE (0 << 7)
+
+extern const unsigned short title_screen_background_tiles[3648];
+#define TITLE_SCREEN_BACKGROUND_TILES 228
+#define TITLE_SCREEN_BACKGROUND_TILES_SIZE 7296
+#define TITLE_SCREEN_BACKGROUND_TILES_LENGTH 3648
+
+extern const unsigned short title_screen_background[1024];
+#define TITLE_SCREEN_BACKGROUND_MAP_WIDTH 32
+#define TITLE_SCREEN_BACKGROUND_MAP_HEIGHT 32
+#define TITLE_SCREEN_BACKGROUND_MAP_SIZE 2048
+#define TITLE_SCREEN_BACKGROUND_MAP_LENGTH 1024
+#define TITLE_SCREEN_BACKGROUND_MAP_TYPE (0 << 14)
