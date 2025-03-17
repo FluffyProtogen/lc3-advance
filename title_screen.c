@@ -2,7 +2,9 @@
 
 #include "assets/title_screen_background.h"
 #include "assets/title_screen_sprites.h"
+#include "game.h"
 #include "gba.h"
+#include "text_editor.h"
 
 typedef struct {
     int animation_steps;
@@ -11,6 +13,8 @@ typedef struct {
 TitleScreenState title_screen_state;
 
 void title_screen_init(void) {
+    memset(&title_screen_state, 0, sizeof(TitleScreenState));
+    game_state = GS_TITLE_SCREEN;
     REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
     REG_BG0CNT = BG_CBB(0) | BG_SBB(30) | BG_4BPP | BG_REG_32X32;
     oam_init(obj_buffer, 128);
@@ -43,7 +47,10 @@ void title_screen_update(void) {
     if (title_screen_state.animation_steps > 60) {
         int state = title_screen_state.animation_steps % 60 < 30 ? ATTR0_WIDE : ATTR0_HIDE;
         obj_set_attr(&obj_buffer[2], state, ATTR1_SIZE_64X32, PRESS_START_PALETTE_ID | PRESS_START_ID);
-        obj_set_pos(&obj_buffer[2], 97, 95);
+        obj_set_pos(&obj_buffer[2], 98, 95);
+
+        if ((cur_keys & KEY_START) && !(prev_keys & KEY_START))
+            text_editor_init();
     }
 
     oam_copy(oam_mem, obj_buffer, 3);

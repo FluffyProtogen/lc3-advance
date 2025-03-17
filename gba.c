@@ -1,17 +1,22 @@
 #include "gba.h"
 
-uint32_t frame_count;
+uint32_t frame_count = 0;
+uint16_t prev_keys = 0;
+uint16_t cur_keys = 0;
 
 OBJ_ATTR obj_buffer[128];
 OBJ_AFFINE *obj_aff_buffer = (OBJ_AFFINE *)obj_buffer;
 
 void oam_copy(OBJ_ATTR *dst, const OBJ_ATTR *src, uint32_t count) {
-    while (count--) *dst++ = *src++;
+    while (count--)
+        *dst++ = *src++;
 }
 
 void wait_for_vblank(void) {
-    while (REG_VCOUNT >= 160);
-    while (REG_VCOUNT < 160);
+    while (REG_VCOUNT >= 160)
+        ;
+    while (REG_VCOUNT < 160)
+        ;
     frame_count++;
 }
 

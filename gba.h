@@ -9,7 +9,9 @@
 #define MEM_VRAM 0x06000000
 #define MEM_OAM 0x07000000
 
-#define REG_DISPCNT *((volatile uint32_t *)(MEM_IO + 0x0000))
+#define REG_DISPCNT *(volatile uint32_t *)(MEM_IO + 0x0000)
+#define REG_DISPSTAT *(volatile uint16_t *)(MEM_IO + 0x0004)
+#define REG_KEYINPUT *(volatile uint16_t *)(MEM_IO + 0x0130)
 
 typedef struct {
     uint32_t data[8];
@@ -56,7 +58,7 @@ void oam_init(OBJ_ATTR *obj, uint32_t count);
 #define DCNT_OBJ_1D 0x0040
 
 #define ATTR0_SQUARE 0
-#define ATTR1_SIZE_64 0xC000
+#define ATTR1_SIZE_32X32 0x8000
 #define ATTR1_SIZE_64X64 0xC000
 #define ATTR1_SIZE_64X32 0xC000
 
@@ -92,7 +94,6 @@ void obj_set_pos(OBJ_ATTR *obj, int x, int y);
 
 typedef uint16_t SCREENBLOCK[1024];
 
-#define MEM_IO 0x04000000
 #define REG_BG0CNT *(volatile uint16_t *)(MEM_IO + 0x0008)
 #define REG_BG0HOFS *(volatile uint16_t *)(MEM_IO + 0x0010)
 #define REG_BG0VOFS *(volatile uint16_t *)(MEM_IO + 0x0012)
@@ -106,6 +107,19 @@ typedef uint16_t SCREENBLOCK[1024];
 #define BG_REG_32X64 0x8000
 #define BG_REG_64X64 0xC000
 
+#define KEY_A 0x0001
+#define KEY_B 0x0002
+#define KEY_SELECT 0x0004
+#define KEY_START 0x0008
+#define KEY_RIGHT 0x0010
+#define KEY_LEFT 0x0020
+#define KEY_UP 0x0040
+#define KEY_DOWN 0x0080
+#define KEY_R 0x0100
+#define KEY_L 0x0200
+
 extern uint32_t frame_count;
+extern uint16_t prev_keys;
+extern uint16_t cur_keys;
 
 void wait_for_vblank(void);
