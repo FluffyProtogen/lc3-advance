@@ -6,7 +6,6 @@
 #include "game.h"
 #include "gba.h"
 #include "text_editor.h"
-#include "title_screen.h"
 
 typedef enum {
     UPPERCASE,
@@ -20,140 +19,40 @@ typedef enum {
 } TextEditorMode;
 
 typedef struct {
-    char text[500][27];
+    char text[999][28];
     int top_visible_line;
     int keyboard_x;
     int keyboard_y;
+    int cursor_x;
+    int cursor_y;
     KeyboardMode keyboard_mode;
     TextEditorMode text_editor_mode;
 } TextEditorState;
 
 TextEditorState te_state;
 
-int font_index(char c) {
-    // clang-format off
-    switch (c) {
-        case 'I': return 1;
-        case 'L': return 2;
-        case 'S': return 3;
-        case '0': return 4;
-        case 'A': return 5;
-        case 'O': return 6;
-        case '9': return 7;
-        case '8': return 8;
-        case 'G': return 9;
-        case '@': return 10;
-        case '3': return 11;
-        case '2': return 12;
-        case '?': return 13;
-        case '[': return 14;
-        case 'k': return 15;
-        case ']': return 16;
-        case '&': return 17;
-        case 't': return 18;
-        case '}': return 19;
-        case ')': return 20;
-        case 'C': return 21;
-        case '4': return 22;
-        case 'f': return 23;
-        case '6': return 24;
-        case '$': return 25;
-        case '^': return 26;
-        case '1': return 27;
-        case '7': return 28;
-        case 'Z': return 29;
-        case 'M': return 30;
-        case 'N': return 31;
-        case 'K': return 32;
-        case 'W': return 33;
-        case 'X': return 34;
-        case 'Y': return 35;
-        case '\\': return 36;
-        case '5': return 37;
-        case 'E': return 38;
-        case 'F': return 39;
-        case 'T': return 40;
-        case '\'': return 41;
-        case 'R': return 42;
-        case 'B': return 43;
-        case 'P': return 44;
-        case 'Q': return 45;
-        case 'D': return 46;
-        case '#': return 47;
-        case '"': return 48;
-        case 'H': return 49;
-        case 'U': return 50;
-        case 'V': return 51;
-        case 'b': return 52;
-        case 'h': return 53;
-        case 'y': return 54;
-        case '<': return 57;
-        case 'm': return 58;
-        case 'w': return 59;
-        case 'x': return 60;
-        case 'z': return 61;
-        case '=': return 62;
-        case 'p': return 63;
-        case 'n': return 64;
-        case 'r': return 65;
-        case 'u': return 66;
-        case 'v': return 68;
-        case 'g': return 69;
-        case 'q': return 70;
-        case 'e': return 71;
-        case 'o': return 72;
-        case 'c': return 73;
-        case 's': return 74;
-        case 'a': return 75;
-        case '-': return 76;
-        case ',': return 77;
-        case '.': return 78;
-        case '_': return 79;
-        case '%': return 80;
-        case '|': return 81;
-        case 'l': return 82;
-        case '!': return 83;
-        case '`': return 84;
-        case 'i': return 85;
-        case '(': return 86;
-        case '{': return 87;
-        case 'j': return 88;
-        case 'd': return 89;
-        case 'J': return 90;
-        case '/': return 91;
-        case '~': return 92;
-        case '*': return 93;
-        case '>': return 94;
-        case '+': return 102;
-        case ';': return 103;
-        case ':': return 104;
-        default: return 0;
-    }
-    // clang-format on
-}
-
-int line_num_font_index(int num) {
-    // clang-format off
-    switch (num) {
-        case 0: return 97; 
-        case 1: return 56; 
-        case 2: return 101; 
-        case 3: return 100; 
-        case 4: return 67; 
-        case 5: return 95; 
-        case 6: return 55; 
-        case 7: return 96; 
-        case 8: return 99; 
-        case 9: return 98; 
-        default: return 0;
-    }
-    // clang-format on
-}
+const char *KEY_TEXT[3][3] = {
+    {
+        "ABCDEFGHIJ 123",
+        "KLMNOPQRST 456",
+        "UVWXYZ    0789",
+    },
+    {
+        "abcdefghij 123",
+        "klmnopqrst 456",
+        "uvwxyz    0789",
+    },
+    {
+        "!\"#$%&'()*+,-.",
+        "/:;<=>?@[\\]^_`",
+        "{|}~\n\x1F          ",
+    },
+};
 
 void draw_text(void) {
     for (int i = 0; i < 14; i++) {
         int line = i + te_state.top_visible_line;
-        if (line >= 500)
+        if (line >= 999)
             break;
         char *text = te_state.text[line];
         int j = 0;
@@ -182,40 +81,9 @@ void draw_text(void) {
 void draw_keyboard(void) {
     int row_start = 15;
 
-    char *upper_text[] = {
-        "ABCDEFGHIJ 123",
-        "KLMNOPQRST 456",
-        "UVWXYZ    0789",
-    };
-
-    char *lower_text[] = {
-        "abcdefghij 123",
-        "klmnopqrst 456",
-        "uvwxyz    0789",
-    };
-
-    char *symbol_text[] = {
-        "!\"#$%&'()*+,-.",
-        "/:;<=>?@[\\]^_`",
-        "{|}~          ",
-    };
-
-    char **text = {0};
-    switch (te_state.keyboard_mode) {
-        case UPPERCASE:
-            text = upper_text;
-            break;
-        case LOWERCASE:
-            text = lower_text;
-            break;
-        case SYMBOL:
-            text = symbol_text;
-            break;
-    }
-
     for (int t = 0; t < 3; t++) {
-        for (int i = 0; text[t][i]; i++)
-            se_mem[30][(row_start + (t * 2)) * 32 + i * 2 + 1] = font_index(text[t][i]);
+        for (int i = 0; KEY_TEXT[te_state.keyboard_mode][t][i]; i++)
+            se_mem[30][(row_start + (t * 2)) * 32 + i * 2 + 1] = font_index(KEY_TEXT[te_state.keyboard_mode][t][i]);
     }
 
     uint16_t id =
@@ -238,13 +106,12 @@ void text_editor_init(void) {
     memcpy(tile_mem[0], font_tiles, FONT_TILES_SIZE);
     memcpy(se_mem[30], font, FONT_MAP_SIZE);
 
+    pal_bg_mem[2] = 0x2D6B;
     memcpy(tile_mem[4], text_editor_sprites, TEXT_EDITOR_SPRITES_SIZE);
     memcpy(pal_obj_mem, text_editor_sprites_palette, TEXT_EDITOR_SPRITES_PALETTE_SIZE);
 
     REG_BG0VOFS = 0;
     REG_BG0HOFS = 0;
-
-    pal_bg_mem[2] = 0x2D6B;
 
     obj_set_attr(&obj_buffer[0], LOWER_SPRITE_SHAPE, ATTR1_SIZE_32X32, LOWER_PALETTE_ID | LOWER_ID);
     obj_set_pos(&obj_buffer[0], 117, 142);
@@ -252,20 +119,38 @@ void text_editor_init(void) {
     obj_set_attr(&obj_buffer[1], KEYBOARDCURSOR_SPRITE_SHAPE, ATTR1_SIZE_32X32,
                  KEYBOARDCURSOR_PALETTE_ID | KEYBOARDCURSOR_ID);
 
-    te_state = (TextEditorState){.text = {
-                                     "hi",
-                                     "test",
-                                 }};
+    obj_set_attr(&obj_buffer[2], LOWER_SPRITE_SHAPE, ATTR1_SIZE_32X32, LOWER_PALETTE_ID | TEXTCURSOR_ID);
+    obj_set_pos(&obj_buffer[2], 8 * 3, 0);
+
     draw_text();
     draw_keyboard();
     obj_set_pos(&obj_buffer[1], 2, 120);
+}
+
+void handle_type(void) {
+    if (te_state.keyboard_x == 6 && te_state.keyboard_y == 2) {
+        te_state.keyboard_mode = (te_state.keyboard_mode + 1) % 3;
+        draw_keyboard();
+        return;
+    }
+
+    int cur_line = te_state.top_visible_line + te_state.cursor_y;
+    if (strlen(te_state.text[cur_line]) == 27)
+        return;
+    for (int i = 25; i >= te_state.cursor_x; i--)
+        te_state.text[cur_line][i + 1] = te_state.text[cur_line][i];
+
+    char c = KEY_TEXT[te_state.keyboard_mode][te_state.keyboard_y][te_state.keyboard_x];
+    c = c == '\x1F' ? ' ' : c;
+    te_state.text[cur_line][te_state.cursor_x++] = c;
+    draw_text();
 }
 
 void text_editor_update(void) {
     if (te_state.text_editor_mode == KEYBOARD) {
         if (KEY_PRESSED(KEY_RIGHT) && te_state.keyboard_x < 13) {
             if (te_state.keyboard_mode == SYMBOL) {
-                if (te_state.keyboard_y == 2 && te_state.keyboard_x == 3)
+                if (te_state.keyboard_y == 2 && te_state.keyboard_x == 5)
                     te_state.keyboard_x = 6;
                 else if (te_state.keyboard_y == 2) {
                     if (te_state.keyboard_x < 6)
@@ -283,7 +168,7 @@ void text_editor_update(void) {
         if (KEY_PRESSED(KEY_LEFT) && te_state.keyboard_x > 0) {
             if (te_state.keyboard_mode == SYMBOL) {
                 if (te_state.keyboard_y == 2 && te_state.keyboard_x == 6)
-                    te_state.keyboard_x = 3;
+                    te_state.keyboard_x = 5;
                 else
                     te_state.keyboard_x--;
             } else {
@@ -306,11 +191,11 @@ void text_editor_update(void) {
 
         if (KEY_PRESSED(KEY_DOWN) && te_state.keyboard_y < 2) {
             if (te_state.keyboard_mode == SYMBOL) {
-                if (te_state.keyboard_y == 1 && te_state.keyboard_x > 3) {
+                if (te_state.keyboard_y == 1 && te_state.keyboard_x > 5) {
                     te_state.keyboard_x = 6;
                     te_state.keyboard_y = 2;
                 } else
-                    te_state.keyboard_y--;
+                    te_state.keyboard_y++;
             } else {
                 if (te_state.keyboard_x > 6 && te_state.keyboard_x < 9 && te_state.keyboard_y == 1) {
                     te_state.keyboard_x = 6;
@@ -323,28 +208,56 @@ void text_editor_update(void) {
             }
         }
 
-        if (KEY_PRESSED(KEY_A)) {
-            if (te_state.keyboard_x == 6 && te_state.keyboard_y == 2) {
-                te_state.keyboard_mode = (te_state.keyboard_mode + 1) % 3;
-                draw_keyboard();
-            } else {
-            }
-        }
+        if (KEY_PRESSED(KEY_A))
+            handle_type();
     } else {
-        if (KEY_PRESSED(KEY_DOWN)) {
-            te_state.top_visible_line++;
-            draw_text();
+#define CUR_LINE te_state.top_visible_line + te_state.cursor_y
+        if (KEY_PRESSED(KEY_RIGHT) && te_state.cursor_x < (int)strlen(te_state.text[CUR_LINE]))
+            te_state.cursor_x++;
+        if (KEY_PRESSED(KEY_LEFT) && te_state.cursor_x > 0)
+            te_state.cursor_x--;
+        if (KEY_PRESSED(KEY_UP)) {
+            if (te_state.cursor_y == 0) {
+                if (te_state.top_visible_line > 0) {
+                    te_state.top_visible_line--;
+                    draw_text();
+                }
+            } else
+                te_state.cursor_y--;
+            int len = strlen(te_state.text[CUR_LINE]);
+            if (len < te_state.cursor_x)
+                te_state.cursor_x = len;
         }
-
-        if (KEY_PRESSED(KEY_UP) && te_state.top_visible_line > 0) {
-            te_state.top_visible_line--;
-            draw_text();
+        if (KEY_PRESSED(KEY_DOWN)) {
+            if (te_state.cursor_y == 13) {
+                if (te_state.top_visible_line < 999 - 13) {
+                    te_state.top_visible_line++;
+                    draw_text();
+                }
+            } else
+                te_state.cursor_y++;
+            int len = strlen(te_state.text[CUR_LINE]);
+            if (len < te_state.cursor_x)
+                te_state.cursor_x = len;
         }
     }
+
+    if (KEY_PRESSED(KEY_B) && te_state.cursor_x > 0) {
+        int cur_line = te_state.top_visible_line + te_state.cursor_y;
+        for (int i = te_state.cursor_x - 1; i < 27; i++)
+            te_state.text[cur_line][i] = te_state.text[cur_line][i + 1];
+        te_state.cursor_x--;
+        draw_text();
+    }
+
+    if (KEY_PRESSED(KEY_R))
+        te_state.text_editor_mode = (te_state.text_editor_mode + 1) % 2;
 
     if (te_state.keyboard_x == 6 && te_state.keyboard_y == 2)
         obj_set_pos(&obj_buffer[1], 110, 152);
     else
         obj_set_pos(&obj_buffer[1], 2 + 16 * te_state.keyboard_x, 120 + 16 * te_state.keyboard_y);
+
+    obj_set_pos(&obj_buffer[2], te_state.cursor_x == 27 ? 239 : (24 + 8 * te_state.cursor_x), 8 * te_state.cursor_y);
     oam_copy(oam_mem, obj_buffer, 3);
 }

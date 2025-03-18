@@ -118,6 +118,9 @@ typedef uint16_t SCREENBLOCK[1024];
 #define KEY_R 0x0100
 #define KEY_L 0x0200
 
+// from GBATEK
+#define FLASH_MEM_START *(volatile uint8_t *)0xE000000
+
 extern uint32_t frame_count;
 extern uint16_t prev_keys;
 extern uint16_t cur_keys;
