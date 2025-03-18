@@ -123,3 +123,5 @@ extern uint16_t prev_keys;
 extern uint16_t cur_keys;
 
 void wait_for_vblank(void);
+
+#define KEY_PRESSED(key) ((cur_keys & key) && !(prev_keys & key))

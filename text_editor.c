@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <string.h>
 
 #include "assets/font.h"
@@ -5,6 +6,7 @@
 #include "game.h"
 #include "gba.h"
 #include "text_editor.h"
+#include "title_screen.h"
 
 typedef enum {
     UPPERCASE,
@@ -12,9 +14,18 @@ typedef enum {
     SYMBOL,
 } KeyboardMode;
 
+typedef enum {
+    KEYBOARD,
+    TEXT,
+} TextEditorMode;
+
 typedef struct {
     char text[500][27];
     int top_visible_line;
+    int keyboard_x;
+    int keyboard_y;
+    KeyboardMode keyboard_mode;
+    TextEditorMode text_editor_mode;
 } TextEditorState;
 
 TextEditorState te_state;
@@ -170,20 +181,53 @@ void draw_text(void) {
 
 void draw_keyboard(void) {
     int row_start = 15;
-    char *text[] = {
+
+    char *upper_text[] = {
         "ABCDEFGHIJ 123",
         "KLMNOPQRST 456",
         "UVWXYZ    0789",
     };
+
+    char *lower_text[] = {
+        "abcdefghij 123",
+        "klmnopqrst 456",
+        "uvwxyz    0789",
+    };
+
+    char *symbol_text[] = {
+        "!\"#$%&'()*+,-.",
+        "/:;<=>?@[\\]^_`",
+        "{|}~          ",
+    };
+
+    char **text = {0};
+    switch (te_state.keyboard_mode) {
+        case UPPERCASE:
+            text = upper_text;
+            break;
+        case LOWERCASE:
+            text = lower_text;
+            break;
+        case SYMBOL:
+            text = symbol_text;
+            break;
+    }
+
     for (int t = 0; t < 3; t++) {
-        int i = 0;
-        for (; text[t][i]; i++)
+        for (int i = 0; text[t][i]; i++)
             se_mem[30][(row_start + (t * 2)) * 32 + i * 2 + 1] = font_index(text[t][i]);
     }
+
+    uint16_t id =
+        (te_state.keyboard_mode == UPPERCASE ? LOWER_ID : (te_state.keyboard_mode == LOWERCASE ? SYMBOL_ID : UPPER_ID));
+    obj_set_attr(&obj_buffer[0], LOWER_SPRITE_SHAPE, ATTR1_SIZE_32X32, LOWER_PALETTE_ID | id);
+    obj_set_pos(&obj_buffer[0], 117, 142);
 }
 
 void text_editor_init(void) {
     memset(&te_state, 0, sizeof(TextEditorState));
+    te_state.text_editor_mode = KEYBOARD;
+    te_state.keyboard_mode = UPPERCASE;
     wait_for_vblank();  // memset takes a while, so wait a frame after it finishes to prevent flickering
     game_state = GS_TEXT_EDITOR;
     REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
@@ -205,22 +249,102 @@ void text_editor_init(void) {
     obj_set_attr(&obj_buffer[0], LOWER_SPRITE_SHAPE, ATTR1_SIZE_32X32, LOWER_PALETTE_ID | LOWER_ID);
     obj_set_pos(&obj_buffer[0], 117, 142);
 
+    obj_set_attr(&obj_buffer[1], KEYBOARDCURSOR_SPRITE_SHAPE, ATTR1_SIZE_32X32,
+                 KEYBOARDCURSOR_PALETTE_ID | KEYBOARDCURSOR_ID);
+
     te_state = (TextEditorState){.text = {
                                      "hi",
                                      "test",
                                  }};
     draw_text();
     draw_keyboard();
+    obj_set_pos(&obj_buffer[1], 2, 120);
 }
 
 void text_editor_update(void) {
-    if ((cur_keys & KEY_DOWN) && !(prev_keys & KEY_DOWN)) {
-        te_state.top_visible_line++;
-        draw_text();
+    if (te_state.text_editor_mode == KEYBOARD) {
+        if (KEY_PRESSED(KEY_RIGHT) && te_state.keyboard_x < 13) {
+            if (te_state.keyboard_mode == SYMBOL) {
+                if (te_state.keyboard_y == 2 && te_state.keyboard_x == 3)
+                    te_state.keyboard_x = 6;
+                else if (te_state.keyboard_y == 2) {
+                    if (te_state.keyboard_x < 6)
+                        te_state.keyboard_x++;
+                } else
+                    te_state.keyboard_x++;
+            } else if (te_state.keyboard_x == 6 && te_state.keyboard_y == 2)
+                te_state.keyboard_x = 10;
+            else if (te_state.keyboard_x == 9 && te_state.keyboard_y < 2)
+                te_state.keyboard_x = 11;
+            else
+                te_state.keyboard_x++;
+        }
+
+        if (KEY_PRESSED(KEY_LEFT) && te_state.keyboard_x > 0) {
+            if (te_state.keyboard_mode == SYMBOL) {
+                if (te_state.keyboard_y == 2 && te_state.keyboard_x == 6)
+                    te_state.keyboard_x = 3;
+                else
+                    te_state.keyboard_x--;
+            } else {
+                if (te_state.keyboard_x == 10 && te_state.keyboard_y == 2)
+                    te_state.keyboard_x = 6;
+                else if (te_state.keyboard_x == 11 && te_state.keyboard_y < 2)
+                    te_state.keyboard_x -= 2;
+                else
+                    te_state.keyboard_x--;
+            }
+        }
+
+        if (KEY_PRESSED(KEY_UP) && te_state.keyboard_y > 0) {
+            if (te_state.keyboard_x == 10 && te_state.keyboard_y == 2) {
+                te_state.keyboard_x = 9;
+                te_state.keyboard_y = 1;
+            } else
+                te_state.keyboard_y--;
+        }
+
+        if (KEY_PRESSED(KEY_DOWN) && te_state.keyboard_y < 2) {
+            if (te_state.keyboard_mode == SYMBOL) {
+                if (te_state.keyboard_y == 1 && te_state.keyboard_x > 3) {
+                    te_state.keyboard_x = 6;
+                    te_state.keyboard_y = 2;
+                } else
+                    te_state.keyboard_y--;
+            } else {
+                if (te_state.keyboard_x > 6 && te_state.keyboard_x < 9 && te_state.keyboard_y == 1) {
+                    te_state.keyboard_x = 6;
+                    te_state.keyboard_y = 2;
+                } else if (te_state.keyboard_x > 6 && te_state.keyboard_x == 9 && te_state.keyboard_y == 1) {
+                    te_state.keyboard_x = 10;
+                    te_state.keyboard_y = 2;
+                } else
+                    te_state.keyboard_y++;
+            }
+        }
+
+        if (KEY_PRESSED(KEY_A)) {
+            if (te_state.keyboard_x == 6 && te_state.keyboard_y == 2) {
+                te_state.keyboard_mode = (te_state.keyboard_mode + 1) % 3;
+                draw_keyboard();
+            } else {
+            }
+        }
+    } else {
+        if (KEY_PRESSED(KEY_DOWN)) {
+            te_state.top_visible_line++;
+            draw_text();
+        }
+
+        if (KEY_PRESSED(KEY_UP) && te_state.top_visible_line > 0) {
+            te_state.top_visible_line--;
+            draw_text();
+        }
     }
 
-    if ((cur_keys & KEY_UP) && !(prev_keys & KEY_UP) && te_state.top_visible_line > 0) {
-        te_state.top_visible_line--;
-        draw_text();
-    }
+    if (te_state.keyboard_x == 6 && te_state.keyboard_y == 2)
+        obj_set_pos(&obj_buffer[1], 110, 152);
+    else
+        obj_set_pos(&obj_buffer[1], 2 + 16 * te_state.keyboard_x, 120 + 16 * te_state.keyboard_y);
+    oam_copy(oam_mem, obj_buffer, 3);
 }
