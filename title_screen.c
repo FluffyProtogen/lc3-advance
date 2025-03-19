@@ -49,8 +49,10 @@ void title_screen_update(void) {
         obj_set_attr(&obj_buffer[2], state, ATTR1_SIZE_64X32, PRESS_START_PALETTE_ID | PRESS_START_ID);
         obj_set_pos(&obj_buffer[2], 98, 95);
 
-        if (KEY_PRESSED(KEY_START))
+        if (KEY_PRESSED(KEY_START)) {
             text_editor_init();
+            return;
+        }
     }
 
     oam_copy(oam_mem, obj_buffer, 3);

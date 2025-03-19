@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -6,6 +7,8 @@
 #include "game.h"
 #include "gba.h"
 #include "text_editor.h"
+#include "text_editor_menu.h"
+#include "title_screen.h"
 
 typedef enum {
     UPPERCASE,
@@ -94,6 +97,11 @@ void draw_keyboard(void) {
 
 void text_editor_init(void) {
     memset(&te_state, 0, sizeof(TextEditorState));
+
+    for (int j = 0; j < 999; j++)
+        for (int i = 0; i < 27; i++)
+            te_state.text[j][i] = FLASH_MEM[j * 27 + i];
+
     te_state.text_editor_mode = KEYBOARD;
     te_state.keyboard_mode = UPPERCASE;
     wait_for_vblank();  // memset takes a while, so wait a frame after it finishes to prevent flickering
@@ -122,6 +130,9 @@ void text_editor_init(void) {
     obj_set_attr(&obj_buffer[2], LOWER_SPRITE_SHAPE, ATTR1_SIZE_32X32, LOWER_PALETTE_ID | TEXTCURSOR_ID);
     obj_set_pos(&obj_buffer[2], 8 * 3, 0);
 
+    obj_set_attr(&obj_buffer[3], LOWER_SPRITE_SHAPE, ATTR1_SIZE_32X32, LOWER_PALETTE_ID | KEYBOARDENABLED_ID);
+    obj_set_pos(&obj_buffer[3], 8 * 29, 0);
+
     draw_text();
     draw_keyboard();
     obj_set_pos(&obj_buffer[1], 2, 120);
@@ -146,9 +157,22 @@ void handle_type(void) {
     draw_text();
 }
 
+bool key(int key) {
+    static int last_frame = 0;
+    if (KEY_PRESSED(key)) {
+        last_frame = frame_count;
+        return true;
+    }
+    if ((cur_keys & KEY_L) && (cur_keys & key) && frame_count - last_frame > 6) {
+        last_frame = frame_count;
+        return true;
+    }
+    return false;
+}
+
 void text_editor_update(void) {
     if (te_state.text_editor_mode == KEYBOARD) {
-        if (KEY_PRESSED(KEY_RIGHT) && te_state.keyboard_x < 13) {
+        if (key(KEY_RIGHT) && te_state.keyboard_x < 13) {
             if (te_state.keyboard_mode == SYMBOL) {
                 if (te_state.keyboard_y == 2 && te_state.keyboard_x == 5)
                     te_state.keyboard_x = 6;
@@ -165,7 +189,7 @@ void text_editor_update(void) {
                 te_state.keyboard_x++;
         }
 
-        if (KEY_PRESSED(KEY_LEFT) && te_state.keyboard_x > 0) {
+        if (key(KEY_LEFT) && te_state.keyboard_x > 0) {
             if (te_state.keyboard_mode == SYMBOL) {
                 if (te_state.keyboard_y == 2 && te_state.keyboard_x == 6)
                     te_state.keyboard_x = 5;
@@ -181,7 +205,7 @@ void text_editor_update(void) {
             }
         }
 
-        if (KEY_PRESSED(KEY_UP) && te_state.keyboard_y > 0) {
+        if (key(KEY_UP) && te_state.keyboard_y > 0) {
             if (te_state.keyboard_x == 10 && te_state.keyboard_y == 2) {
                 te_state.keyboard_x = 9;
                 te_state.keyboard_y = 1;
@@ -189,7 +213,7 @@ void text_editor_update(void) {
                 te_state.keyboard_y--;
         }
 
-        if (KEY_PRESSED(KEY_DOWN) && te_state.keyboard_y < 2) {
+        if (key(KEY_DOWN) && te_state.keyboard_y < 2) {
             if (te_state.keyboard_mode == SYMBOL) {
                 if (te_state.keyboard_y == 1 && te_state.keyboard_x > 5) {
                     te_state.keyboard_x = 6;
@@ -208,15 +232,15 @@ void text_editor_update(void) {
             }
         }
 
-        if (KEY_PRESSED(KEY_A))
+        if (key(KEY_A))
             handle_type();
     } else {
 #define CUR_LINE te_state.top_visible_line + te_state.cursor_y
-        if (KEY_PRESSED(KEY_RIGHT) && te_state.cursor_x < (int)strlen(te_state.text[CUR_LINE]))
+        if (key(KEY_RIGHT) && te_state.cursor_x < (int)strlen(te_state.text[CUR_LINE]))
             te_state.cursor_x++;
-        if (KEY_PRESSED(KEY_LEFT) && te_state.cursor_x > 0)
+        if (key(KEY_LEFT) && te_state.cursor_x > 0)
             te_state.cursor_x--;
-        if (KEY_PRESSED(KEY_UP)) {
+        if (key(KEY_UP)) {
             if (te_state.cursor_y == 0) {
                 if (te_state.top_visible_line > 0) {
                     te_state.top_visible_line--;
@@ -228,7 +252,7 @@ void text_editor_update(void) {
             if (len < te_state.cursor_x)
                 te_state.cursor_x = len;
         }
-        if (KEY_PRESSED(KEY_DOWN)) {
+        if (key(KEY_DOWN)) {
             if (te_state.cursor_y == 13) {
                 if (te_state.top_visible_line < 999 - 13) {
                     te_state.top_visible_line++;
@@ -242,7 +266,7 @@ void text_editor_update(void) {
         }
     }
 
-    if (KEY_PRESSED(KEY_B) && te_state.cursor_x > 0) {
+    if (key(KEY_B) && te_state.cursor_x > 0) {
         int cur_line = te_state.top_visible_line + te_state.cursor_y;
         for (int i = te_state.cursor_x - 1; i < 27; i++)
             te_state.text[cur_line][i] = te_state.text[cur_line][i + 1];
@@ -250,8 +274,22 @@ void text_editor_update(void) {
         draw_text();
     }
 
-    if (KEY_PRESSED(KEY_R))
+    if (KEY_PRESSED(KEY_R)) {
         te_state.text_editor_mode = (te_state.text_editor_mode + 1) % 2;
+        int id = (te_state.text_editor_mode == KEYBOARD ? KEYBOARDENABLED_ID : CURSORENABLED_ID);
+        obj_set_attr(&obj_buffer[3], LOWER_SPRITE_SHAPE, ATTR1_SIZE_32X32, LOWER_PALETTE_ID | id);
+        obj_set_pos(&obj_buffer[3], 8 * 29, 0);
+    }
+
+    if (KEY_PRESSED(KEY_START)) {
+        text_editor_menu_init();
+        return;
+    }
+    // if (KEY_PRESSED(KEY_L)) {
+    //     for (int j = 0; j < 999; j++)
+    //         for (int i = 0; i < 27; i++)
+    //             FLASH_MEM[j * 27 + i] = te_state.text[j][i];
+    // }
 
     if (te_state.keyboard_x == 6 && te_state.keyboard_y == 2)
         obj_set_pos(&obj_buffer[1], 110, 152);
@@ -259,5 +297,5 @@ void text_editor_update(void) {
         obj_set_pos(&obj_buffer[1], 2 + 16 * te_state.keyboard_x, 120 + 16 * te_state.keyboard_y);
 
     obj_set_pos(&obj_buffer[2], te_state.cursor_x == 27 ? 239 : (24 + 8 * te_state.cursor_x), 8 * te_state.cursor_y);
-    oam_copy(oam_mem, obj_buffer, 3);
+    oam_copy(oam_mem, obj_buffer, 4);
 }

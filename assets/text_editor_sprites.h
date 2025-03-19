@@ -1,7 +1,7 @@
 /*
  * Exported with nin10kit v1.8
- * Invocation command was nin10kit --device=gba --mode=sprites --bpp=4 text_editor_sprites KeyboardCursor.png TextCursor.png upper.png lower.png symbol.png 
- * Time-stamp: Monday 03/17/2025, 18:55:38
+ * Invocation command was nin10kit --device=gba --mode=sprites --bpp=4 text_editor_sprites KeyboardCursor.png TextCursor.png upper.png lower.png symbol.png KeyboardEnabled.png CursorEnabled.png 
+ * Time-stamp: Wednesday 03/19/2025, 04:19:45
  * 
  * Image Information
  * -----------------
@@ -10,6 +10,8 @@
  * upper.png 32@32
  * lower.png 32@32
  * symbol.png 32@32
+ * KeyboardEnabled.png 32@32
+ * CursorEnabled.png 32@32
  * 
  * All bug reports / feature requests are to be filed here https://github.com/TricksterGuy/nin10kit/issues
  */
@@ -24,9 +26,9 @@ extern const unsigned short text_editor_sprites_palette[16];
 #define TEXT_EDITOR_SPRITES_PALETTE_SIZE 32
 #define TEXT_EDITOR_SPRITES_PALETTE_LENGTH 16
 
-extern const unsigned short text_editor_sprites[1280];
-#define TEXT_EDITOR_SPRITES_SIZE 2560
-#define TEXT_EDITOR_SPRITES_LENGTH 1280
+extern const unsigned short text_editor_sprites[1792];
+#define TEXT_EDITOR_SPRITES_SIZE 3584
+#define TEXT_EDITOR_SPRITES_LENGTH 1792
 
 #define KEYBOARDCURSOR_PALETTE_ID (0 << 12)
 #define KEYBOARDCURSOR_SPRITE_SHAPE (0 << 14)
@@ -52,6 +54,16 @@ extern const unsigned short text_editor_sprites[1280];
 #define SYMBOL_SPRITE_SHAPE (0 << 14)
 #define SYMBOL_SPRITE_SIZE (2 << 14)
 #define SYMBOL_ID 64
+
+#define KEYBOARDENABLED_PALETTE_ID (0 << 12)
+#define KEYBOARDENABLED_SPRITE_SHAPE (0 << 14)
+#define KEYBOARDENABLED_SPRITE_SIZE (2 << 14)
+#define KEYBOARDENABLED_ID 80
+
+#define CURSORENABLED_PALETTE_ID (0 << 12)
+#define CURSORENABLED_SPRITE_SHAPE (0 << 14)
+#define CURSORENABLED_SPRITE_SIZE (2 << 14)
+#define CURSORENABLED_ID 96
 
 #endif
 

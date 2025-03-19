@@ -3,6 +3,7 @@
 #include "game.h"
 #include "gba.h"
 #include "text_editor.h"
+#include "text_editor_menu.h"
 #include "title_screen.h"
 
 int main(void) {
@@ -19,8 +20,9 @@ int main(void) {
             case GS_TEXT_EDITOR:
                 text_editor_update();
                 break;
+            case GS_TEXT_EDITOR_MENU:
+                text_editor_menu_update();
+                break;
         }
     }
-
-    return 0;
 }

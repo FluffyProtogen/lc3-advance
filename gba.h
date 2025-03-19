@@ -119,7 +119,7 @@ typedef uint16_t SCREENBLOCK[1024];
 #define KEY_L 0x0200
 
 // from GBATEK
-#define FLASH_MEM_START *(volatile uint8_t *)0xE000000
+#define FLASH_MEM ((volatile uint8_t *)0xE000000)
 
 extern uint32_t frame_count;
 extern uint16_t prev_keys;
@@ -128,3 +128,11 @@ extern uint16_t cur_keys;
 void wait_for_vblank(void);
 
 #define KEY_PRESSED(key) ((cur_keys & key) && !(prev_keys & key))
+
+#define REG_DMA *((volatile DMA_REC *)0x040000B0)
+#define DMA_ENABLE (1 << 31)
+typedef struct DMA_REC {
+    const void *src;
+    void *dst;
+    uint32_t cnt;
+} DMA_REC;
