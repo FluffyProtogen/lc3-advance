@@ -50,7 +50,7 @@ void title_screen_update(void) {
         obj_set_pos(&obj_buffer[2], 98, 95);
 
         if (KEY_PRESSED(KEY_START)) {
-            text_editor_init();
+            text_editor_init(true);
             return;
         }
     }
