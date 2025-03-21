@@ -68,7 +68,6 @@ bool try_assemble() {
     bool success = false;
     LineTokensList token_list;
     size_t lines_read;
-    char **lines;
     LineTokenizerResult lt_result = tokenize_lines(&token_list, te_state.text, &lines_read);
     if (lt_result != LT_SUCCESS) {
         wait_for_vblank();

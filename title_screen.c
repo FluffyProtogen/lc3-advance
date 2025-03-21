@@ -10,10 +10,10 @@ typedef struct {
     int animation_steps;
 } TitleScreenState;
 
-__attribute__((section(".ewram"))) TitleScreenState title_screen_state;
+TitleScreenState title_screen_state;
 
 void title_screen_init(void) {
-    memset(&title_screen_state, 0, sizeof(TitleScreenState));
+    title_screen_state = (TitleScreenState){0};
     wait_for_vblank();
     game_state = GS_TITLE_SCREEN;
     REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;

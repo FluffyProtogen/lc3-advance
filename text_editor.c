@@ -61,10 +61,9 @@ void draw_text(void) {
 void draw_keyboard(void) {
     int row_start = 15;
 
-    for (int t = 0; t < 3; t++) {
+    for (int t = 0; t < 3; t++)
         for (int i = 0; KEY_TEXT[te_state.keyboard_mode][t][i]; i++)
             se_mem[30][(row_start + (t * 2)) * 32 + i * 2 + 1] = font_index(KEY_TEXT[te_state.keyboard_mode][t][i]);
-    }
 
     uint16_t id =
         (te_state.keyboard_mode == UPPERCASE ? LOWER_ID : (te_state.keyboard_mode == LOWERCASE ? SYMBOL_ID : UPPER_ID));
@@ -74,7 +73,7 @@ void draw_keyboard(void) {
 
 void text_editor_init(bool clear) {
     if (clear) {
-        memset(&te_state, 0, sizeof(TextEditorState));
+        memset(&te_state.top_visible_line, 0, sizeof(TextEditorState) - sizeof(te_state.text));
 
         for (int j = 0; j < 999; j++)
             for (int i = 0; i < 27; i++)
