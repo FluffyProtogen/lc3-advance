@@ -2,6 +2,7 @@
 
 #include "game.h"
 #include "gba.h"
+#include "obj_viewer.h"
 #include "text_editor.h"
 #include "text_editor_menu.h"
 #include "title_screen.h"
@@ -22,6 +23,9 @@ int main(void) {
                 break;
             case GS_TEXT_EDITOR_MENU:
                 text_editor_menu_update();
+                break;
+            case GS_OBJ_VIEWER:
+                obj_viewer_update();
                 break;
         }
     }

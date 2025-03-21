@@ -1,6 +1,8 @@
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "assembler/object.h"
 #include "assembler/parser.h"
 #include "assembler/symbol.h"
 #include "assembler/token.h"
@@ -8,11 +10,13 @@
 #include "assets/text_editor_sprites.h"
 #include "game.h"
 #include "gba.h"
+#include "obj_viewer.h"
 #include "text_editor.h"
 #include "text_editor_menu.h"
 
 typedef struct {
     int cursor_pos;
+    bool obj_menu_active;
 } TextEditorMenuState;
 
 TextEditorMenuState tm_state;
@@ -60,7 +64,8 @@ void write_line_num(int num, int row, int col) {
 }
 
 #define ERR_ROW 12
-void try_assemble() {
+bool try_assemble() {
+    bool success = false;
     LineTokensList token_list;
     size_t lines_read;
     char **lines;
@@ -143,28 +148,40 @@ void try_assemble() {
         goto free_instructions;
     }
 
+    success = write_to_object(&instructions);
+    wait_for_vblank();
+
 free_instructions:
     free(instructions.instructions);
 free_symbols:
     free_symbol_table(&symbol_table);
 free_tokens:
     free_tokens_list(&token_list);
+    return success;
 }
 
 void text_editor_menu_update(void) {
     if (KEY_PRESSED(KEY_UP) && tm_state.cursor_pos > 0)
         tm_state.cursor_pos--;
-    if (KEY_PRESSED(KEY_DOWN) && tm_state.cursor_pos < 2)
+    if (KEY_PRESSED(KEY_DOWN) && ((tm_state.obj_menu_active && tm_state.cursor_pos < 1) ||
+                                  (!tm_state.obj_menu_active && tm_state.cursor_pos < 2)))
         tm_state.cursor_pos++;
 
-    if (tm_state.cursor_pos == 0)
-        obj_set_pos(&obj_buffer[0], 2 + 8 * 12, 8 * 4);
-    else if (tm_state.cursor_pos == 1)
-        obj_set_pos(&obj_buffer[0], 2 + 8 * 10, 8 * 6);
-    else
-        obj_set_pos(&obj_buffer[0], 2 + 8 * 9, 8 * 8);
+    if (tm_state.obj_menu_active) {
+        if (tm_state.cursor_pos == 0)
+            obj_set_pos(&obj_buffer[0], 2 + 8 * 10, 8 * 5);
+        else
+            obj_set_pos(&obj_buffer[0], 2 + 8 * 7, 8 * 7);
+    } else {
+        if (tm_state.cursor_pos == 0)
+            obj_set_pos(&obj_buffer[0], 2 + 8 * 12, 8 * 4);
+        else if (tm_state.cursor_pos == 1)
+            obj_set_pos(&obj_buffer[0], 2 + 8 * 10, 8 * 6);
+        else
+            obj_set_pos(&obj_buffer[0], 2 + 8 * 9, 8 * 8);
+    }
 
-    if (KEY_PRESSED(KEY_A)) {
+    if (KEY_PRESSED(KEY_A) && !tm_state.obj_menu_active) {
         if (tm_state.cursor_pos == 0) {
             for (int j = 0; j < 999; j++)
                 for (int i = 0; i < 27; i++)
@@ -179,12 +196,32 @@ void text_editor_menu_update(void) {
             for (int i = 0; text[i]; i++)
                 se_mem[30][32 * ERR_ROW + i + 12] = font_index(text[i]);
         } else if (tm_state.cursor_pos == 1) {
-            try_assemble();
+            if (try_assemble()) {
+                memcpy(se_mem[30], font, FONT_MAP_SIZE);
+
+                char *text[] = {"assembled successfully", "execute", "view obj file"};
+                for (int i = 0; i < (int)(sizeof(text) / sizeof(*text)); i++) {
+                    int offset = (30 - strlen(text[i])) / 2;
+                    for (int j = 0; text[i][j]; j++)
+                        se_mem[30][32 * (2 + i * 2 + (i == 0 ? 0 : 1)) + offset + j] = font_index(text[i][j]);
+                }
+
+                tm_state.cursor_pos = 0;
+                tm_state.obj_menu_active = true;
+            }
         } else {
             memset(&te_state.text, 0, sizeof(te_state.text));
             text_editor_init(false);
             te_state.cursor_x = 0;
             te_state.cursor_y = 0;
+            return;
+        }
+    }
+
+    if (KEY_PRESSED(KEY_A) && tm_state.obj_menu_active) {
+        if (tm_state.cursor_pos == 0) {
+        } else {
+            obj_viewer_init();
             return;
         }
     }

@@ -83,7 +83,7 @@ void text_editor_init(bool clear) {
 
     te_state.text_editor_mode = TE_KEYBOARD;
     te_state.keyboard_mode = UPPERCASE;
-    wait_for_vblank();  // memset takes a while, so wait a frame after it finishes to prevent flickering
+    wait_for_vblank();
     game_state = GS_TEXT_EDITOR;
     REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
     REG_BG0CNT = BG_CBB(0) | BG_SBB(30) | BG_4BPP | BG_REG_32X32;
@@ -284,7 +284,7 @@ void text_editor_update(void) {
         }
         if (key(KEY_DOWN)) {
             if (te_state.cursor_y == 13) {
-                if (te_state.top_visible_line < 999 - 13) {
+                if (te_state.top_visible_line < 999 - 14) {
                     te_state.top_visible_line++;
                     draw_text();
                 }

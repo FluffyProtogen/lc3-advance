@@ -25,7 +25,7 @@ UnescapeResult unescape_string(const char *input, size_t input_len, char **outpu
     for (size_t i = 0; i < input_len; i++) {
         if (input[len] == '\\') {
             allocated = true;
-            char escape;
+            char escape = '_';
             switch (input[++i]) {
                 case 'n':
                     escape = '\n';

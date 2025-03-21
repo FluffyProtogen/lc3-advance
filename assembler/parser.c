@@ -120,7 +120,7 @@ ParserResult parse_instructions(Instructions *instrs,
                     next_address = -1;
                     PUSH_CONTINUE(((Instruction){.type = INSTR_END}));
                 case ADD:
-                    temp_instr = (Instruction){};
+                    temp_instr = (Instruction){0};
                     EXPECT_TOKEN(REGISTER);
                     temp_instr.data.dr = token->data.reg;
                     EXPECT_TOKEN(COMMA);
@@ -140,7 +140,7 @@ ParserResult parse_instructions(Instructions *instrs,
                     }
                     PUSH_CONTINUE(temp_instr);
                 case AND:
-                    temp_instr = (Instruction){};
+                    temp_instr = (Instruction){0};
                     EXPECT_TOKEN(REGISTER);
                     temp_instr.data.dr = token->data.reg;
                     EXPECT_TOKEN(COMMA);
