@@ -28,4 +28,4 @@ extern TextEditorState te_state;
 
 void text_editor_init(bool clear);
 
-void text_editor_update(void);
+bool l_key(int key);

@@ -1,12 +1,13 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "../assets/font.h"
+#include "../assets/text_editor_sprites.h"
 #include "assembler/object.h"
-#include "assets/font.h"
-#include "assets/text_editor_sprites.h"
 #include "game.h"
 #include "gba.h"
 #include "obj_viewer.h"
+#include "text_editor.h"
 
 typedef struct {
     int top_visible_line;
@@ -47,26 +48,6 @@ void draw_obj(void) {
     }
 }
 
-void obj_viewer_init(void) {
-    ov_state = (ObjViewerState){0};
-    game_state = GS_OBJ_VIEWER;
-    REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
-    REG_BG0CNT = BG_CBB(0) | BG_SBB(30) | BG_4BPP | BG_REG_32X32;
-    oam_init(obj_buffer, 128);
-
-    memcpy(pal_bg_mem, font_palette, FONT_PALETTE_SIZE);
-    memcpy(tile_mem[0], font_tiles, FONT_TILES_SIZE);
-    memcpy(se_mem[30], font, FONT_MAP_SIZE);
-
-    memcpy(tile_mem[4], text_editor_sprites, TEXT_EDITOR_SPRITES_SIZE);
-    memcpy(pal_obj_mem, text_editor_sprites_palette, TEXT_EDITOR_SPRITES_PALETTE_SIZE);
-
-    pal_bg_mem[2] = 0x2D6B;
-    REG_BG0VOFS = 0;
-    REG_BG0HOFS = 0;
-    draw_obj();
-}
-
 bool key_pressed_or_held(int key) {
     static int last_frame = 0;
     if (KEY_PRESSED(key) || ((cur_keys & key) && frame_count - last_frame > 2)) {
@@ -86,4 +67,29 @@ void obj_viewer_update(void) {
         ov_state.top_visible_line++;
         draw_obj();
     }
+
+    if (KEY_PRESSED(KEY_B) || KEY_PRESSED(KEY_A)) {
+        text_editor_init(false);
+        return;
+    }
+}
+
+void obj_viewer_init(void) {
+    ov_state = (ObjViewerState){0};
+    update_fn = obj_viewer_update;
+    REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
+    REG_BG0CNT = BG_CBB(0) | BG_SBB(30) | BG_4BPP | BG_REG_32X32;
+    oam_init(obj_buffer, 128);
+
+    memcpy(pal_bg_mem, font_palette, FONT_PALETTE_SIZE);
+    memcpy(tile_mem[0], font_tiles, FONT_TILES_SIZE);
+    memcpy(se_mem[30], font, FONT_MAP_SIZE);
+
+    memcpy(tile_mem[4], text_editor_sprites, TEXT_EDITOR_SPRITES_SIZE);
+    memcpy(pal_obj_mem, text_editor_sprites_palette, TEXT_EDITOR_SPRITES_PALETTE_SIZE);
+
+    pal_bg_mem[2] = 0x2D6B;
+    REG_BG0VOFS = 0;
+    REG_BG0HOFS = 0;
+    draw_obj();
 }
