@@ -9,11 +9,13 @@
 #include "vm.h"
 #include "vm_viewer.h"
 
+#define TEXT_WIDTH 24
+
 typedef struct {
     int keyboard_x;
     int keyboard_y;
     KeyboardMode keyboard_mode;
-    char text[10][20];
+    char text[10][TEXT_WIDTH];
     int text_x;
     int text_y;
     bool running;
@@ -25,11 +27,11 @@ __attribute__((section(".ewram"))) VmViewerState vv_state;
 void vm_put_char(char c) {
     if (c != '\n')
         vv_state.text[vv_state.text_y][vv_state.text_x] = c;
-    if (vv_state.text_x == 19 || c == '\n') {
+    if (vv_state.text_x == (TEXT_WIDTH - 1) || c == '\n') {
         if (vv_state.text_y == 9) {
             for (int i = 0; i < 9; i++)
-                memcpy(&vv_state.text[i], &vv_state.text[i + 1], 20);
-            memset(&vv_state.text[9], 0, 20);
+                memcpy(&vv_state.text[i], &vv_state.text[i + 1], TEXT_WIDTH);
+            memset(&vv_state.text[9], 0, TEXT_WIDTH);
             vv_state.text_x = 0;
         } else {
             vv_state.text_x = 0;
@@ -41,7 +43,7 @@ void vm_put_char(char c) {
 
 static void draw_text(void) {
     for (int i = 0; i < 10; i++)
-        for (int j = 0; j < 20; j++)
+        for (int j = 0; j < TEXT_WIDTH; j++)
             se_mem[30][(i + 1) * 32 + j + 1] = font_index(vv_state.text[i][j]);
 }
 
@@ -64,11 +66,21 @@ static void handle_type(void) {
         draw_keyboard();
         return;
     }
+
+    if (vv_state.vm.waiting_for_char) {
+        char c = KEY_TEXT[vv_state.keyboard_mode][vv_state.keyboard_y][vv_state.keyboard_x];
+        vv_state.vm.char_input = c == '\x1F' ? ' ' : c;
+    }
 }
+
+#define STEPS_PER_FRAME 100
 
 void vm_viewer_update(void) {
     if (vv_state.running)
-        vv_state.running = vm_exec_next_instruction(&vv_state.vm);
+        for (int i = 0; i < STEPS_PER_FRAME; i++)
+            if (!(vv_state.running = vm_exec_next_instruction(&vv_state.vm)))
+                break;
+
     draw_text();
     if (l_key(KEY_RIGHT) && vv_state.keyboard_x < 13) {
         if (vv_state.keyboard_mode == SYMBOL) {

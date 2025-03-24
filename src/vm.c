@@ -76,9 +76,18 @@ void write_reg(VirtualMachine *vm, uint16_t reg, uint16_t value) {
 }
 
 bool vm_exec_next_instruction(VirtualMachine *vm) {
+    if (vm->waiting_for_char) {
+        if (vm->char_input != 0) {
+            vm->r0 = vm->char_input;
+            vm->waiting_for_char = false;
+        } else
+            return true;
+    }
+
     uint16_t instr = vm->memory[vm->pc++];
     uint16_t op_code = instr >> 12;
     uint16_t dr, sr, sr1, sr2, br, imm5, offset, value, addr;
+
     switch (op_code) {
         case 0x0:;  // BR
             uint16_t flags = (instr >> 9) & 0x7;
@@ -182,6 +191,13 @@ bool vm_exec_next_instruction(VirtualMachine *vm) {
         case 0xF:;  // Trap
             int trap = instr & 0xFF;
             switch (trap) {
+                case 0x20:  // GETC
+                    vm->waiting_for_char = true;
+                    vm->char_input = 0;
+                    break;
+                case 0x21:  // OUT
+                    vm_put_char(vm->r0);
+                    break;
                 case 0x22:;  // PUTS
                     uint16_t i = vm->r0;
                     for (;;) {

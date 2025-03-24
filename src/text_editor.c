@@ -118,7 +118,8 @@ bool l_key(int key) {
         last_frame = frame_count;
         return true;
     }
-    if ((cur_keys & KEY_L) && (cur_keys & key) && frame_count - last_frame > 6) {
+
+    if ((cur_keys & key) && frame_count - last_frame > ((cur_keys & KEY_L) ? 2 : 8)) {
         last_frame = frame_count;
         return true;
     }
@@ -283,7 +284,8 @@ void text_editor_init(bool clear) {
         for (int j = 0; j < 999; j++)
             for (int i = 0; i < 27; i++)
                 te_state.text[j][i] = FLASH_MEM[j * 27 + i];
-    }
+    } else
+        l_key(KEY_B);  // prevent text from deleting on first frame
 
     te_state.text_editor_mode = TE_KEYBOARD;
     te_state.keyboard_mode = UPPERCASE;

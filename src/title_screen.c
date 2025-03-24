@@ -8,21 +8,34 @@
 
 typedef struct {
     int animation_steps;
+    float speed;
+    float f_pos;
+    int steps;
+    float scaling;
 } TitleScreenState;
 
-TitleScreenState title_screen_state;
+TitleScreenState ts_state;
 
 void title_screen_update(void) {
     int title_x = 68;
-    int title_y = title_screen_state.animation_steps > 36 ? 72 : title_screen_state.animation_steps * 2;  // end at 72
-    obj_set_pos(&obj_buffer[0], title_x, title_y);
-    obj_set_pos(&obj_buffer[1], title_x + 64, title_y);
+    if (ts_state.steps < 6) {
+        ts_state.speed += 0.2;
+        ts_state.f_pos += ts_state.speed;
+        int title_y = ts_state.f_pos;
+        if (title_y > 72) {
+            ts_state.steps++;
+            ts_state.scaling *= 0.7;
+            ts_state.speed = -6.0 * ts_state.scaling;
+        }
+        obj_set_pos(&obj_buffer[0], title_x, title_y);
+        obj_set_pos(&obj_buffer[1], title_x + 64, title_y);
+    }
 
     REG_BG0VOFS = (frame_count) / 3;
     REG_BG0HOFS = (frame_count) / 3;
 
-    if (title_screen_state.animation_steps > 60) {
-        int state = title_screen_state.animation_steps % 60 < 30 ? ATTR0_WIDE : ATTR0_HIDE;
+    if (ts_state.animation_steps > 150) {
+        int state = ts_state.animation_steps % 60 < 30 ? ATTR0_HIDE : ATTR0_WIDE;
         obj_set_attr(&obj_buffer[2], state, ATTR1_SIZE_64X32, PRESS_START_PALETTE_ID | PRESS_START_ID);
         obj_set_pos(&obj_buffer[2], 98, 95);
 
@@ -33,11 +46,11 @@ void title_screen_update(void) {
     }
 
     oam_copy(oam_mem, obj_buffer, 3);
-    title_screen_state.animation_steps++;
+    ts_state.animation_steps++;
 }
 
 void title_screen_init(void) {
-    title_screen_state = (TitleScreenState){0};
+    ts_state = (TitleScreenState){.scaling = 1.0};
     wait_for_vblank();
     update_fn = title_screen_update;
     REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
