@@ -112,15 +112,15 @@ static void handle_type(void) {
     draw_text();
 }
 
+static int last_lkey_frame = 0;
 bool l_key(int key) {
-    static int last_frame = 0;
     if (KEY_PRESSED(key)) {
-        last_frame = frame_count;
+        last_lkey_frame = frame_count;
         return true;
     }
 
-    if ((cur_keys & key) && frame_count - last_frame > ((cur_keys & KEY_L) ? 2 : 8)) {
-        last_frame = frame_count;
+    if ((cur_keys & key) && (int)frame_count - last_lkey_frame > ((cur_keys & KEY_L) ? 2 : 8)) {
+        last_lkey_frame = frame_count;
         return true;
     }
     return false;
@@ -279,13 +279,17 @@ void text_editor_update(void) {
 }
 
 void text_editor_init(bool clear) {
+    last_lkey_frame = frame_count + 20;
     if (clear) {
         memset(&te_state.top_visible_line, 0, sizeof(TextEditorState) - sizeof(te_state.text));
-        for (int j = 0; j < 999; j++)
-            for (int i = 0; i < 27; i++)
-                te_state.text[j][i] = FLASH_MEM[j * 27 + i];
-    } else
-        l_key(KEY_B);  // prevent text from deleting on first frame
+        if (FLASH_MEM[0] == 0xFF)  // new flash mem is set to all 0xFF
+            memset(&te_state.text, 0, sizeof(te_state.text));
+        else {
+            for (int j = 0; j < 999; j++)
+                for (int i = 0; i < 27; i++)
+                    te_state.text[j][i] = FLASH_MEM[j * 27 + i];
+        }
+    }
 
     te_state.text_editor_mode = TE_KEYBOARD;
     te_state.keyboard_mode = UPPERCASE;

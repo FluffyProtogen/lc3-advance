@@ -131,6 +131,15 @@ free_tokens:
     return success;
 }
 
+void write_flash(int address, char byte) {
+    FLASH_MEM[0x5555] = 0xAA;
+    FLASH_MEM[0x2AAA] = 0x55;
+    FLASH_MEM[0x5555] = 0xA0;
+    FLASH_MEM[address] = byte;
+    while (FLASH_MEM[address] != byte)
+        ;
+}
+
 void text_editor_menu_update(void) {
     if (KEY_PRESSED(KEY_UP) && tm_state.cursor_pos > 0)
         tm_state.cursor_pos--;
@@ -142,7 +151,7 @@ void text_editor_menu_update(void) {
         if (tm_state.cursor_pos == 0) {
             for (int j = 0; j < 999; j++)
                 for (int i = 0; i < 27; i++)
-                    FLASH_MEM[j * 27 + i] = te_state.text[j][i];
+                    write_flash(j * 27 + i, te_state.text[j][i]);
 
             for (int i = 0; i < 30; i++)
                 se_mem[30][32 * ERR_ROW + i] = font_index(' ');

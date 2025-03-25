@@ -2,9 +2,9 @@
 
 #include "../assets/title_screen_background.h"
 #include "../assets/title_screen_sprites.h"
+#include "file_chooser.h"
 #include "game.h"
 #include "gba.h"
-#include "text_editor.h"
 
 typedef struct {
     int animation_steps;
@@ -38,11 +38,11 @@ void title_screen_update(void) {
         int state = ts_state.animation_steps % 60 < 30 ? ATTR0_HIDE : ATTR0_WIDE;
         obj_set_attr(&obj_buffer[2], state, ATTR1_SIZE_64X32, PRESS_START_PALETTE_ID | PRESS_START_ID);
         obj_set_pos(&obj_buffer[2], 98, 95);
+    }
 
-        if (KEY_PRESSED(KEY_START)) {
-            text_editor_init(true);
-            return;
-        }
+    if (KEY_PRESSED(KEY_START)) {
+        file_chooser_init();
+        return;
     }
 
     oam_copy(oam_mem, obj_buffer, 3);
